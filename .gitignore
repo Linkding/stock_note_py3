@@ -1,0 +1,7 @@
+.vscode
+*.pyc
+.update_git.sh
+*.ipynb
+.ipynb_checkpoints
+.idea
+py3-tushare-kezhuanzhai.ipynb
