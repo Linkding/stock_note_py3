@@ -6,6 +6,7 @@ import time
 from sqlalchemy import create_engine
 import datetime 
 import time
+import sys
 
 def get_today():
     today = datetime.date.today()
@@ -66,7 +67,19 @@ def to_sql(start,end):
 
 def main():
     today = get_today()
-    to_sql(today,today)
+    # to_sql(today,today)
+    arg = sys.argv
+    l = len(arg)
+    if l == 3: #两个传参
+        to_sql(arg[1],arg[2])        
+    elif l == 2:  #一个传参
+        to_sql(arg[1],arg[1])
+    elif l == 1: #0传参
+        to_sql(today,today)
+    else:     # 超过2个传参
+        print ('error: out of argv needed')
+    
+
     
 if __name__ == '__main__':
     main()   

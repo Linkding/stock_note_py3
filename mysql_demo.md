@@ -1,7 +1,7 @@
 ```
 CREATE TABLE `gov_bond_yield` (
   `id` INT UNSIGNED AUTO_INCREMENT,
-  `date` DATE NULL,
+  `date` VARCHAR(100) NULL,
   `10y` FLOAT NULL,
   PRIMARY KEY (`id`)
   )ENGINE=InnoDB DEFAULT CHARSET=utf8;
