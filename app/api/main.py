@@ -6,7 +6,7 @@ import json
 
 import pymysql
 # 打开数据库连接
-db = pymysql.connect("127.0.0.1", "root", "123456", "stock_note", charset='utf8')
+db = pymysql.connect("127.0.0.1", "root", "lfzs@efun.com", "stock_note", charset='utf8')
 # 使用cursor()方法获取操作游标 
 cursor = db.cursor(pymysql.cursors.DictCursor)
 
@@ -82,3 +82,9 @@ def create(table_name,parser):
         db.rollback()
         result = [{"status":"fail"}]
         return result
+
+def update(table_name,parse):
+    pass
+
+def delete(table_name,parse):
+    pass
