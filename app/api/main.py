@@ -13,12 +13,12 @@ cursor = db.cursor(pymysql.cursors.DictCursor)
 
 @api.route('/api/v1/<table_name>/<action>',methods=['POST'])
 def parse_request(table_name,action):
-    print ('it is arrive here')
     print ("table_name:  %s " % table_name)
     print ("action:  %s " % action)
     # print ('re_data:',request.data)
     # print (type(request))
-
+    print (request.data)
+    print (request.get_json())
     # 前端传参需要预处理，空参数需要预设个固定变量，再传给处理函数
     if not request.data:
         parser = None
@@ -36,23 +36,49 @@ def parse_request(table_name,action):
         
     # 回调前端   
     result = respose(result)
-    print (type(result))
-    return jsonify(result)
+    # print (type(rsesult))
+    # 关闭游标
+    cursor.close()
+    # 关闭连接
+    db.close()
+    return result
 
 # 回调前端
 def respose(data):
-    res = {"data":data}
+    res = data
     print (res)
-    return res
+    return jsonify(res)
+
+# 解析post传参
+def parse_body(parser):
+    result = {}
+    # 解析where部分
+    if "where" in parser:
+        where = 'where '
+        for i in parser['where']:
+            where =  where + ' ' + i + '=' + "'%s'"  % parser['where'][i] + ' and'
+        where = where.rstrip('and')
+        result['where'] = where
+    else:
+        result['where'] = ''
+
+    # 解析limit部分
+    if "limit" in parser:
+        result['limit'] = parser['limit']
+    else:
+        result['limit'] = 5
+    # 解析by
+    if "by" in parser:
+        result['by'] 
+    return result
 
 # 数据库操作  <读>
 def read(table_name,parser=None):
-    if parser is None:
-        parser = {}
-        parser['limit'] = 5
-    limit = parser['limit']
-    print ("limit: %s" % limit)
-    cursor.execute('select * from %s limit %s' % (table_name,limit))
+    print ('this is  ',parser)
+    parse = parse_body(parser)
+    print (parse)
+    # print ("limit: %s" % parse['limit'])
+    cursor.execute('select * from %s %s limit %s' % (table_name,parse['where'],parse['limit']))
     results = cursor.fetchall()
     return results
 
@@ -88,3 +114,9 @@ def update(table_name,parse):
 
 def delete(table_name,parse):
     pass
+
+# 提供直接定制sql的接口
+def exec_sql(sql):
+    cursor.execute(sql)
+    result = cursor.fetchall()
+    return result
