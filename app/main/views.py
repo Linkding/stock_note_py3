@@ -1,13 +1,17 @@
 # coding: utf-8
+
 import tushare as ts
 import pandas as pd
 import json
 from flask import request
+from flask import jsonify
 from datetime import timedelta, datetime
 from sqlalchemy import create_engine
 from . import main
-
 import pymysql
+from ..api import main as api
+from ..api import helper
+
 # 打开数据库连接
 db = pymysql.connect("127.0.0.1", "root", "lfzs@efun.com", "stock_note", charset='utf8')
 # 使用cursor()方法获取操作游标 
@@ -114,25 +118,94 @@ def meg_single(code):
 
 # 从tushare接口获取股票日交易信息存入本地数据库
 @main.route('/todo/api/v1.0/tasks/add_new', methods=['POST'])
-def get_new_stock_from_ts():
-    today = get_date()
-    #获取当前日期
+def add_new_stock():
     data = request.get_json()
+    get_new_stock_from_ts(data)
+    return json.dumps({"success":"True"})
+
+def get_new_stock_from_ts(data,day=None):
+    #默认获取当前日期
+    if day is None:
+        day = get_date()
     print (data)
-    print ("today is ",today)
+    print ("day is ",day)
     for code in data:
         if (code.startswith('6')):
             code = code + '.SH'
         else:
             code = code + '.SZ'
         print (code)
-        df = pro.daily(ts_code=code, trade_date=today)
+        df = pro.daily(ts_code=code, trade_date=day)
         a = 1 #设点一循环起始值
-        # 如果因为停牌等原因股价并没有数据，日期倒推，知道找到数据为止
+        # 如果停牌等原因，股价并没有数据，日期倒推，至找到数据为止
         while (df.empty):
             day = (datetime.today() + timedelta(-a)).strftime('%Y%m%d')
             df = pro.daily(ts_code=code,trade_date=day)
             a = a + 1
         engine = create_engine("mysql+pymysql://root:lfzs@efun.com@127.0.0.1/stock_note?charset=utf8", encoding="utf-8", echo=True)
         df.to_sql('main_stock',engine,if_exists='append',index=False)
-    return json.dumps({"success":"True"})
+    
+# 获取股票最新股价信息，提供前端获取
+@main.route('/todo/api/v1.0/tasks/stock_info', methods=['POST'])
+def get_stock():
+    today = get_date()
+    #获取当前日期
+    data = request.get_json()
+    print (data)
+    print ("today is ",today)
+    stock_list = []
+    for code in data:
+        if (code.startswith('6')):
+            code = code + '.SH'
+        else:
+            code = code + '.SZ'
+        print (code)
+        res = api.read('main_stock',{
+            "where":{
+                "ts_code":code,
+                "trade_date":today
+            }
+        })
+        # 如果停牌等原因，股价并没有数据，日期倒推，至找到数据为止
+        a = 1 #设点一循环起始值
+        while (len(res)==0):
+            day = (datetime.today() + timedelta(-a)).strftime('%Y%m%d')
+            res = api.read('main_stock',{
+                "where":{
+                    "ts_code":code,
+                    "trade_date":day
+                }
+            })
+            a = a + 1
+        stock_list.append(res[0])
+    print (stock_list)
+    return api.respose(stock_list)
+
+# 每日获取股票数据接口，已通过curl定时任务来获取
+@main.route('/todo/api/v1.0/tasks/auto_get_stock', methods=['POST'])
+def auto_get_stock():
+    #从mock获取股票信息
+    all_stock = helper.merge_mock('stock')
+    print (all_stock)
+    stock_code = []
+    for i in all_stock:
+        stock_code.append(i['code'])
+    stock_code = list(set(stock_code)) #去重
+    stock_code.remove('999999') #去除现金代码
+    print (request.data)
+    #获取日期
+    if not request.data:
+        today = get_date()
+    elif 'date' in request.get_json():
+        data = request.get_json()
+        today = data['date']
+    print ('today',today)
+    get_new_stock_from_ts(stock_code,today)
+    return api.respose({"success":"Ture"})
+
+@main.route('/todo/api/v1.0/tasks/check_stock_code', methods=['POST'])
+def check_stock_code():
+    data = request.get_json()
+    sql = sql = 'select * from base_stock where symbol like="%s%s%s" limit 5'  % ('%',data['code'],'%')
+    res = api.exec_sql(sql)
+    return api.respose(res)

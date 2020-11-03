@@ -5,20 +5,19 @@ from . import api
 import json
 
 import pymysql
-# 打开数据库连接
-db = pymysql.connect("127.0.0.1", "root", "lfzs@efun.com", "stock_note", charset='utf8')
-# 使用cursor()方法获取操作游标 
-cursor = db.cursor(pymysql.cursors.DictCursor)
+
+def db_coursor():
+    # 打开数据库连接
+    db = pymysql.connect("127.0.0.1", "root", "lfzs@efun.com", "stock_note", charset='utf8')
+    # 使用cursor()方法获取操作游标 
+    cursor = db.cursor(pymysql.cursors.DictCursor)
+    return db,cursor
 
 
 @api.route('/api/v1/<table_name>/<action>',methods=['POST'])
 def parse_request(table_name,action):
     print ("table_name:  %s " % table_name)
     print ("action:  %s " % action)
-    # print ('re_data:',request.data)
-    # print (type(request))
-    print (request.data)
-    print (request.get_json())
     # 前端传参需要预处理，空参数需要预设个固定变量，再传给处理函数
     if not request.data:
         parser = None
@@ -37,10 +36,7 @@ def parse_request(table_name,action):
     # 回调前端   
     result = respose(result)
     # print (type(rsesult))
-    # 关闭游标
-    cursor.close()
-    # 关闭连接
-    db.close()
+    
     return result
 
 # 回调前端
@@ -52,6 +48,12 @@ def respose(data):
 # 解析post传参
 def parse_body(parser):
     result = {}
+    # 如果没有传参
+    if parser is None:
+        result['limit'] = 5
+        result['where'] = ''
+        return result
+    
     # 解析where部分
     if "where" in parser:
         where = 'where '
@@ -69,17 +71,23 @@ def parse_body(parser):
         result['limit'] = 5
     # 解析by
     if "by" in parser:
-        result['by'] 
+        result['by']
+
     return result
 
 # 数据库操作  <读>
 def read(table_name,parser=None):
-    print ('this is  ',parser)
+    # 获取db和coursor
+    db,cursor = db_coursor()
+    # 解析传参
     parse = parse_body(parser)
     print (parse)
-    # print ("limit: %s" % parse['limit'])
     cursor.execute('select * from %s %s limit %s' % (table_name,parse['where'],parse['limit']))
     results = cursor.fetchall()
+    # 关闭游标
+    cursor.close()
+    # 关闭连接
+    db.close()
     return results
 
 # 数据库操作 <写>
