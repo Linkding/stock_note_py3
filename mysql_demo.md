@@ -25,3 +25,13 @@ CREATE TABLE `hs300` (
   PRIMARY KEY (`id`)
   )ENGINE=InnoDB DEFAULT CHARSET=utf8;
 ```
+```
+ CREATE TABLE `base_stock` (
+  `ts_code` text,
+  `symbol` text,
+  `name` text,
+  `area` text,
+  `industry` text,
+  `list_date` text
+) ENGINE=InnoDB DEFAULT CHARSET=utf8
+```
