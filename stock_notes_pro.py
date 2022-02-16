@@ -20,7 +20,7 @@ manager = Manager(app)
 # manager.add_command("shell", Shell(make_context=make_shell_context))
 # manager.add_command("db", MigrateCommand)
 # 定义后端的端口和服务ip段
-server = Server(host="0.0.0.0", port=8800)
+server = Server(host="0.0.0.0", port=8888)
 manager.add_command('runserver',server)
 # 通过flask_cors处理flask的跨域问题
 CORS(app, supports_credentials=True)
