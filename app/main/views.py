@@ -148,8 +148,8 @@ def get_new_stock_from_ts(data,day=None):
 # 获取股票最新股价信息，提供前端获取
 @main.route('/todo/api/v1.0/tasks/stock_info', methods=['POST'])
 def get_stock():
-    today = get_date()
     #获取当前日期
+    today = get_date()
     data = request.get_json()
     print (data)
     print ("today is ",today)
